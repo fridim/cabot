@@ -1,0 +1,68 @@
+#+TITLE: cabot, a simple IRC framework written in whatever you want
+#+AUTHOR: Guillaume Coré (fridim) <fridim@onfi.re>
+
+* About
+
+This is a minimalist IRC bot written in Go as an exercice to learn the language. The core codebase (in Go) has very few features :
+
+- connect to a server
+- plugins:
+  - run all executable files located in =plugins/=
+  - dispatch input to all plugins located in the =plugins/= directory
+  - Example output of =ps=
+
+#+BEGIN_SRC
+3551 pts/2    Sl+    0:00  \_ ./bot irc.freenode.org:6667
+3558 pts/2    Sl+    0:00      \_ /usr/bin/ruby plugins/register_and_join.rb
+3561 pts/2    Sl+    0:00      \_ /usr/bin/ruby plugins/url.rb
+3566 pts/2    Sl+    0:00      \_ /usr/bin/ruby plugins/date.rb
+3577 pts/2    Sl+    0:00      \_ /usr/bin/ruby plugins/hello.rb
+3579 pts/2    Sl+    0:00      \_ plugins/ping
+#+END_SRC
+
+- signals:
+  - =SIGHUP= will kill and reload all plugins
+  - =SIGUSR1= to reconnect
+
+I have absolutely no credit, as this program is a clone of vivien's [[https://github.com/vivien/modulo][modulo]]. Have a look there!
+
+
+** Plugins
+
+Everything other than the previous is done via plugins.
+Plugins are scripts or compiled programs in the =plugins/= directory.
+
+A plugin must:
+
+- be executable
+- read from STDIN
+- write to STDOUT
+
+Example of plugins:
+- [[file:plugins/ping.go][ping.go]]: reply to PONG from server and send =SIGUSR1= to parent process if last pong is too old
+- [[file:plugins/register_join_freenode.rb][register_join_freenode.rb]]: register USER and NICK and JOIN channels
+- reload plugins from IRC by just talking to your bot, plugin will SIGHUP the parent process on a specific input from registered owner.
+- whatever you want, really
+
+
+Input from the IRC Socket is directly rewritten to the plugin STDIN. The STDOUT of the plugin is then pipelined back to the IRC socket. It's that simple.
+
+Example of helloworld in Ruby:
+
+#+BEGIN_SRC ruby
+#!/usr/bin/ruby
+STDOUT.sync = true
+
+STDIN.each_line do |l|
+  if l =~ /PRIVMSG (#\w+) :(.+)/
+    channel = $1
+    message = $2
+    if message =~ /^hello/i
+      puts "PRIVMSG #{channel} :Hello o/"
+    end
+  end
+end
+#+END_SRC
+
+Do not forget to sync the STDOUT in your plugin otherwise, the bot will probably not reply when you imagine it would.
+
