@@ -2,6 +2,8 @@ package main
 
 import (
 	"bufio"
+	"crypto/tls"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -15,6 +17,7 @@ import (
 
 type Bot struct {
 	Server  string
+	ssl     bool
 	Conn    net.Conn
 	Reader  *bufio.Reader
 	plugins []*Plugin
@@ -32,12 +35,21 @@ func dispatcher(bot *Bot, line string) {
 }
 
 func (bot *Bot) connect() {
-	conn, err := net.Dial("tcp", bot.Server)
-	if err != nil {
-		log.Fatal(err)
+	if bot.ssl {
+		conn, err := tls.Dial("tcp", bot.Server, nil)
+		if err != nil {
+			log.Fatal(err)
+		}
+		bot.Conn = conn
+		bot.Reader = bufio.NewReader(conn)
+	} else {
+		conn, err := net.Dial("tcp", bot.Server)
+		if err != nil {
+			log.Fatal(err)
+		}
+		bot.Conn = conn
+		bot.Reader = bufio.NewReader(conn)
 	}
-	bot.Conn = conn
-	bot.Reader = bufio.NewReader(conn)
 }
 
 func (bot *Bot) reconnect() {
@@ -47,26 +59,14 @@ func (bot *Bot) reconnect() {
 	bot.LoadAllPlugins()
 }
 
-func usage(args []string) {
-	fmt.Printf("%s SERVER:PORT\n", args[0])
-	fmt.Println()
-	fmt.Printf("Ex: %s irc.freenode.org:6667\n", args[0])
-	os.Exit(2)
-}
-
 func main() {
-	args := os.Args
-	if len(args) < 2 {
-		usage(args)
-		os.Exit(2)
-	}
-	if args[1] == "-h" || args[1] == "--help" {
-		usage(args)
-		os.Exit(0)
-	}
-	server := args[1]
+	server := flag.String("server", "chat.freenode.net:6667", "IRC server address to connect to")
+	ssl := flag.Bool("ssl", false, "use SSL")
+	flag.Parse()
+
 	bot := &Bot{
-		Server: server,
+		Server: *server,
+		ssl:    *ssl,
 		mutex:  &sync.Mutex{},
 	}
 	bot.connect()

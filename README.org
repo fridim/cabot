@@ -12,7 +12,7 @@ This is a minimalist IRC bot written in Go as an exercice to learn the language.
   - Example output of =ps=
 
 #+BEGIN_SRC
-3551 pts/2    Sl+    0:00  \_ ./bot irc.freenode.org:6667
+3551 pts/2    Sl+    0:00  \_ ./bot -server=irc.freenode.org:6667
 3558 pts/2    Sl+    0:00      \_ /usr/bin/ruby plugins/register_and_join.rb
 3561 pts/2    Sl+    0:00      \_ /usr/bin/ruby plugins/url.rb
 3566 pts/2    Sl+    0:00      \_ /usr/bin/ruby plugins/date.rb
