@@ -40,7 +40,7 @@ A plugin must:
 
 Example of plugins:
 - [[file:plugins/ping.go][ping.go]]: reply to PONG from server and send =SIGUSR1= to parent process if last pong is too old
-- [[file:plugins/register_join_freenode.rb][register_join_freenode.rb]]: register USER and NICK and JOIN channels
+- [[file:plugins/freenode_register_join.rb][freenode_register_join.rb]]: register USER and NICK and JOIN channels
 - reload plugins from IRC by just talking to your bot, plugin will SIGHUP the parent process on a specific input from registered owner.
 - whatever you want, really
 
@@ -66,3 +66,30 @@ end
 
 Do not forget to sync the STDOUT in your plugin otherwise, the bot will probably not reply when you imagine it would.
 
+
+* Getting started
+
+** Build
+
+#+BEGIN_SRC
+$ go build *.go
+#+END_SRC
+
+You will also need the ping plugin
+
+#+BEGIN_SRC
+$ cd plugins
+$ go build ping.go
+#+END_SRC
+
+** Minimal configuration
+
+Everything related to IRC will be dealt with by plugins.
+
+You will find examples of plugin in plugins/ directory. For freenode, you can just edit =plugins/freenode_register_join.rb= and set channels to join and Nickserv password in a file.
+
+** Run
+
+#+BEGIN_SRC
+$ ./bot -server=chat.freenode.net:6697 -ssl
+#+END_SRC
