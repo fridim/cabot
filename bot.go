@@ -91,6 +91,18 @@ func main() {
 
 	bot.LoadAllPlugins()
 
+	// Stdin loop: allow user to chat with server directly
+	// (useful for debugging)
+	go func() {
+		stdin := bufio.NewReader(os.Stdin)
+
+		for {
+			line, _ := stdin.ReadString('\n')
+			fmt.Fprintf(bot.Conn, line)
+		}
+
+	}()
+
 	// Main loop
 	for {
 		line, err := bot.Reader.ReadString('\n')
