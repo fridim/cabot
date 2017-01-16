@@ -36,7 +36,7 @@ func main() {
 			if err == io.EOF {
 				parentpid.Signal(syscall.SIGUSR1)
 			} else {
-				fmt.Println(err)
+				fmt.Fprintln(os.Stderr, err)
 			}
 			time.Sleep(2 * time.Second)
 		} else {

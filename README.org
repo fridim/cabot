@@ -78,15 +78,16 @@ $ go build *.go
 You will also need the ping plugin
 
 #+BEGIN_SRC
-$ cd plugins
+$ cd plugins_examples/ping
 $ go build ping.go
+$ cp ping ../../plugins/
 #+END_SRC
 
 ** Minimal configuration
 
 Everything related to IRC will be dealt with by plugins.
 
-You will find examples of plugin in plugins/ directory. For freenode, you can just edit =plugins/freenode_register_join.rb= and set channels to join and Nickserv password in a file.
+You will find examples of plugin in plugins_examples/ directory. For freenode, you can just edit =plugins_examples/freenode_register_join.rb= and set channels to join and Nickserv password in a file.
 
 ** Run
 
