@@ -39,8 +39,8 @@ A plugin must:
 - write to STDOUT
 
 Example of plugins:
-- [[file:plugins/ping.go][ping.go]]: reply to PONG from server and send =SIGUSR1= to parent process if last pong is too old
-- [[file:plugins/freenode_register_join.rb][freenode_register_join.rb]]: register USER and NICK and JOIN channels
+- [[file:plugins_examples/ping/ping.go][ping.go]]: reply to PONG from server and send =SIGUSR1= to parent process if last pong is too old
+- [[file:plugins_examples/freenode_register_join.rb][freenode_register_join.rb]]: register USER and NICK and JOIN channels
 - reload plugins from IRC by just talking to your bot, plugin will SIGHUP the parent process on a specific input from registered owner.
 - whatever you want, really
 
