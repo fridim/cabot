@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -84,6 +85,50 @@ func validNickname(nickname string) bool {
 	return true
 }
 
+var r1 = regexp.MustCompile(":[^ ]+ PRIVMSG (#[^ ]+) :(.*)")
+
+// regex to find nickname++
+// from RFC 2812 :
+// nickname   =  ( letter / special ) *8( letter / digit / special / "-" )
+// letter     =  %x41-5A / %x61-7A       ; A-Z / a-z
+//  digit      =  %x30-39                 ; 0-9
+//  special    =  %x5B-60 / %x7B-7D
+//                   ; "[", "]", "\", "`", "_", "^", "{", "|", "}"
+var r2 = regexp.MustCompile("([\\w`\\[\\]\\^_\\{|\\}][\\w\\d-`\\[\\]\\^_\\{|\\}]+)\\+\\+")
+
+func parseKarmaRegex(line string) ([]string, string, bool) {
+	var (
+		channel   string
+		text      string
+		nicknames []string
+		found     bool
+	)
+
+	match := r1.FindStringSubmatch(line)
+
+	if len(match) != 3 {
+		return []string{}, "", false
+	}
+
+	channel = match[1]
+	text = match[2]
+
+	matches := r2.FindAllStringSubmatch(text, -1)
+
+	for _, match = range matches {
+		if len(match) > 1 {
+			nicknames = append(nicknames, match[1])
+		}
+	}
+
+	if len(nicknames) > 0 {
+		found = true
+	}
+
+	return nicknames, channel, found
+}
+
+// Same as parseKarmaRegex above except not using regexp
 func parseKarma(line string) ([]string, string, bool) {
 	var (
 		channel   string
@@ -214,7 +259,7 @@ func main() {
 		if err == nil {
 			replyKarma(line)
 
-			nicknames, channel, found := parseKarma(line)
+			nicknames, channel, found := parseKarmaRegex(line)
 
 			if found {
 				for _, nickname := range nicknames {
