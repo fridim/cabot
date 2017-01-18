@@ -4,9 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"log"
 	"os"
-	"strings"
 	"syscall"
 	"time"
 )
@@ -14,7 +12,8 @@ import (
 func main() {
 	parentpid, err := os.FindProcess(os.Getppid())
 	if err != nil {
-		log.Fatal(err)
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(2)
 	}
 
 	// check last ping and reconnect if needed
@@ -41,7 +40,7 @@ func main() {
 			time.Sleep(2 * time.Second)
 		} else {
 			if len(line) > 4 && line[:4] == "PING" {
-				fmt.Printf(strings.Replace(line, "PING", "PONG", 1))
+				fmt.Printf(fmt.Sprintf("PONG%s", line[4:]))
 				ping = time.Now()
 			}
 		}
