@@ -1,0 +1,30 @@
+#+TITLE: smtp plugin for cabot
+#+AUTHOR: Guillaume Coré (fridim) <fridim@onfi.re>
+
+* smtp plugin
+
+This plugin is used to send mail to specific users. It can be handy when you need to notify someone that's not connected to IRC and present in the channel.
+
+#+BEGIN_QUOTE
+<fridim> :mail user1 Hey we miss you!
+#+END_QUOTE
+
+It needs a conf file called =smtp.json=. For example :
+
+#+BEGIN_SRC json
+{
+	"address": "mx.mydomain.com:587",
+	"hello": "mydomain.com",
+	"user": "cabot",
+	"password": "xxXxxxX",
+	"host": "mx.mydomain.com",
+	"from": "cabot@mydomain.com",
+	"insecure": true,
+	"mails": {
+		"user1": "user1@mail.com",
+		"user2": "user2@mail.com"
+	}
+}
+#+END_SRC
+
+Instead of =insecure= you can specify a CA that will be used to verify the TLS connection.
