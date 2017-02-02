@@ -12,7 +12,14 @@ def getquote()
 end
 
 def setquote(quote)
-  return system("echo \"#{quote}\" >> #{$db}")
+  begin
+    open($db, 'a') do |f| 
+      f.puts quote
+    end
+    return true
+  rescue
+    return false
+  end
 end
 
 STDIN.each_line do |l| 
