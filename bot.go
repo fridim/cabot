@@ -34,28 +34,39 @@ func dispatcher(bot *Bot, line string) {
 	}
 }
 
-func (bot *Bot) connect() {
+func (bot *Bot) connect() error {
 	if bot.ssl {
 		conn, err := tls.Dial("tcp", bot.Server, nil)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		bot.Conn = conn
 		bot.Reader = bufio.NewReader(conn)
 	} else {
 		conn, err := net.Dial("tcp", bot.Server)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 		bot.Conn = conn
 		bot.Reader = bufio.NewReader(conn)
 	}
+	return nil
 }
 
 func (bot *Bot) reconnect() {
 	bot.UnloadAllPlugins()
 	bot.Conn.Close()
-	bot.connect()
+	delay := 2 * time.Second
+	for {
+		err := bot.connect()
+		if err == nil {
+			break
+		}
+		log.Println(err)
+		log.Printf("Reconnecting in %s seconds...\n", delay)
+		time.Sleep(delay)
+		delay = delay * 2
+	}
 	bot.LoadAllPlugins()
 }
 
