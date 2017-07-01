@@ -111,6 +111,7 @@ func main() {
 				bot.reconnect()
 			} else {
 				fmt.Println(err)
+				bot.reconnect()
 			}
 			time.Sleep(2 * time.Second)
 		}
