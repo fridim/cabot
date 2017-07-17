@@ -10,6 +10,7 @@ import (
 	"path"
 	"strings"
 	"sync"
+	"syscall"
 )
 
 type Plugin struct {
@@ -35,9 +36,29 @@ func (p *Plugin) start() {
 	}
 }
 
-func (p *Plugin) kill() {
-	if p.cmd != nil && p.cmd.Process != nil {
-		p.cmd.Process.Kill()
+func (p *Plugin) kill() error {
+	if p.cmd == nil {
+		log.Fatalf("%v: plugin.cmd is nil", p)
+	}
+	if p.cmd.Process == nil {
+		log.Fatalf("%v: plugin.cmd.Process is nil", p)
+	}
+
+	if err := p.cmd.Process.Signal(syscall.Signal(0)); err == nil {
+		if err := p.cmd.Process.Signal(syscall.Signal(15)); err != nil {
+			if err := p.cmd.Process.Kill(); err != nil {
+				log.Fatal("failed to kill: ", err)
+			}
+			log.Println("Killed (9): ", p)
+		} else {
+			log.Println("Killed (15): ", p)
+		}
+
+		p.cmd.Wait()
+		return nil
+	} else {
+		log.Printf("command '%v' process.Signal on pid %d returned: %v\n", p.cmd, p.cmd.Process.Pid, err)
+		return err
 	}
 }
 
@@ -52,12 +73,15 @@ func (p *Plugin) unload() {
 func publish(p *Plugin, in io.Reader, out io.Writer) {
 	reader := bufio.NewReader(in)
 	defer wg.Done()
+
 	for {
 		line, err := reader.ReadString('\n')
 		if err == io.EOF {
+			log.Printf("%v.publish(): Stop publishing.", p)
 			return
 		} else if err != nil {
-			fmt.Println(err)
+			log.Printf("%v.publish(): %s", p, err)
+			log.Printf("%v.publish(): Stop publishing.", p)
 			return
 		}
 
@@ -65,9 +89,11 @@ func publish(p *Plugin, in io.Reader, out io.Writer) {
 		if !strings.Contains(line, "PRIVMSG Nickserv :identify") {
 			fmt.Printf("[%s] %s", p.cmd.Path, line)
 		}
+
 		p.bot.mutex.Lock()
-		fmt.Fprintf(out, line)
+		fmt.Fprint(out, line)
 		p.bot.mutex.Unlock()
+
 	}
 }
 
@@ -100,6 +126,7 @@ func (bot *Bot) newPlugin(path string) *Plugin {
 }
 
 func (bot *Bot) LoadAllPlugins() {
+	bot.pluginsMutex.Lock()
 	bot.plugins = []*Plugin{}
 
 	pluginDir, _ := os.Open("plugins")
@@ -109,9 +136,13 @@ func (bot *Bot) LoadAllPlugins() {
 			bot.plugins = append(bot.plugins, bot.newPlugin(path.Join("plugins", f.Name())))
 		}
 	}
+	bot.pluginsMutex.Unlock()
+	log.Printf("All plugins loaded, wg: %v\n", wg)
 }
 
 func (bot *Bot) UnloadAllPlugins() {
+	bot.pluginsMutex.Lock()
+
 	for _, plugin := range bot.plugins {
 		if plugin == nil {
 			continue
@@ -119,6 +150,8 @@ func (bot *Bot) UnloadAllPlugins() {
 		plugin.kill()
 		plugin.unload()
 	}
+	bot.pluginsMutex.Unlock()
+	log.Printf("All plugins unloaded, wg: %v\n", wg)
 }
 func (bot *Bot) reloadAllPlugins() {
 	bot.UnloadAllPlugins()

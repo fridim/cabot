@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"os"
@@ -16,22 +15,26 @@ import (
 )
 
 type Bot struct {
-	Server  string
-	ssl     bool
-	Conn    net.Conn
-	Reader  *bufio.Reader
-	plugins []*Plugin
-	mutex   *sync.Mutex
+	Server         string
+	ssl            bool
+	Conn           net.Conn
+	Reader         *bufio.Reader
+	plugins        []*Plugin
+	mutex          *sync.Mutex
+	reconnectMutex *sync.Mutex
+	pluginsMutex   *sync.Mutex
 }
 
 func dispatcher(bot *Bot, line string) {
 	fmt.Print(line)
 
+	bot.pluginsMutex.Lock()
 	for _, plugin := range bot.plugins {
 		if plugin != nil {
-			fmt.Fprintf(plugin.stdin, "%s\n", line)
+			fmt.Fprintln(plugin.stdin, line)
 		}
 	}
+	bot.pluginsMutex.Unlock()
 }
 
 func (bot *Bot) connect() error {
@@ -52,10 +55,27 @@ func (bot *Bot) connect() error {
 	}
 	return nil
 }
+func (bot *Bot) disconnect() error {
+	bot.Reader = nil
+	bot.Conn.Close()
+	return nil
+}
+
+var reconnecting bool = false
 
 func (bot *Bot) reconnect() {
+	if reconnecting {
+		// already reconnecting, just wait
+		bot.reconnectMutex.Lock()
+		bot.reconnectMutex.Unlock()
+		return
+	}
+
+	bot.reconnectMutex.Lock()
+	reconnecting = true
+	log.Println("reconnecting...")
 	bot.UnloadAllPlugins()
-	bot.Conn.Close()
+	bot.disconnect()
 	delay := 2 * time.Second
 	for {
 		err := bot.connect()
@@ -68,6 +88,8 @@ func (bot *Bot) reconnect() {
 		delay = delay * 2
 	}
 	bot.LoadAllPlugins()
+	reconnecting = false
+	bot.reconnectMutex.Unlock()
 }
 
 func main() {
@@ -76,9 +98,11 @@ func main() {
 	flag.Parse()
 
 	bot := &Bot{
-		Server: *server,
-		ssl:    *ssl,
-		mutex:  &sync.Mutex{},
+		Server:         *server,
+		ssl:            *ssl,
+		mutex:          &sync.Mutex{},
+		reconnectMutex: &sync.Mutex{},
+		pluginsMutex:   &sync.Mutex{},
 	}
 	bot.connect()
 
@@ -92,10 +116,13 @@ func main() {
 			switch sig {
 			case os.Interrupt:
 			case syscall.SIGHUP:
+				fmt.Println("Signal HUP received")
 				bot.reloadAllPlugins()
 			case syscall.SIGUSR1:
-				fmt.Println("reconnecting...")
+				fmt.Println("Signal USR1 received")
 				bot.reconnect()
+			default:
+				fmt.Println("unhandled signal")
 			}
 		}
 	}()
@@ -118,14 +145,11 @@ func main() {
 	for {
 		line, err := bot.Reader.ReadString('\n')
 		if err != nil {
-			if err == io.EOF {
-				bot.reconnect()
-			} else {
-				fmt.Println(err)
-				bot.reconnect()
-			}
+			bot.reconnect()
+			fmt.Println(err)
 			time.Sleep(2 * time.Second)
+		} else {
+			dispatcher(bot, line)
 		}
-		dispatcher(bot, line)
 	}
 }
