@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -23,10 +24,12 @@ type Bot struct {
 	mutex          *sync.Mutex
 	reconnectMutex *sync.Mutex
 	pluginsMutex   *sync.Mutex
+	toConn         chan string
+	toStderr       chan string
 }
 
 func dispatcher(bot *Bot, line string) {
-	fmt.Print(line)
+	logIn.Print(line)
 
 	bot.pluginsMutex.Lock()
 	for _, plugin := range bot.plugins {
@@ -74,7 +77,6 @@ func (bot *Bot) reconnect() {
 	bot.reconnectMutex.Lock()
 	reconnecting = true
 	log.Println("reconnecting...")
-	bot.UnloadAllPlugins()
 	bot.disconnect()
 	delay := 2 * time.Second
 	for {
@@ -82,17 +84,44 @@ func (bot *Bot) reconnect() {
 		if err == nil {
 			break
 		}
-		log.Println(err)
+		logErr.Println(err)
 		log.Printf("Reconnecting in %s seconds...\n", delay)
 		time.Sleep(delay)
 		delay = delay * 2
 	}
-	bot.LoadAllPlugins()
 	reconnecting = false
 	bot.reconnectMutex.Unlock()
 }
 
+var logErr *log.Logger
+var logIn *log.Logger
+var logOut *log.Logger
+
+func (bot *Bot) consume() {
+	defer wg.Done()
+	for {
+		select {
+		case line := <-bot.toConn:
+			bot.mutex.Lock()
+			fmt.Fprint(bot.Conn, line)
+
+			// Do not output passwords
+			if !strings.Contains(line, "PRIVMSG Nickserv :identify") {
+				logOut.Print(line)
+			}
+
+			bot.mutex.Unlock()
+		case line := <-bot.toStderr:
+			logErr.Print(line)
+		}
+	}
+}
+
 func main() {
+	logErr = log.New(os.Stderr, "!!! ", log.LstdFlags)
+	logOut = log.New(os.Stdout, "--> ", log.LstdFlags)
+	logIn = log.New(os.Stdout, "<-- ", log.LstdFlags)
+	log.SetPrefix("iii ")
 	server := flag.String("server", "chat.freenode.net:6667", "IRC server address to connect to")
 	ssl := flag.Bool("ssl", false, "use SSL")
 	flag.Parse()
@@ -104,7 +133,12 @@ func main() {
 		reconnectMutex: &sync.Mutex{},
 		pluginsMutex:   &sync.Mutex{},
 	}
+	bot.toConn = make(chan string)
+	bot.toStderr = make(chan string)
 	bot.connect()
+
+	// consume chan toConn and toStderr
+	go bot.consume()
 
 	// signals
 	sigs := make(chan os.Signal, 1)

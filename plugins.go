@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"strings"
 	"sync"
 	"syscall"
 )
@@ -31,7 +30,7 @@ func (p *Plugin) start() {
 	defer wg.Done()
 	err := p.cmd.Run()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s: %s\n", p, err)
+		p.bot.toStderr <- fmt.Sprintf("%s: %s\n", p, err)
 		p.unload()
 	}
 }
@@ -70,30 +69,20 @@ func (p *Plugin) unload() {
 	}
 }
 
-func publish(p *Plugin, in io.Reader, out io.Writer) {
+func (p *Plugin) publish(in io.Reader, out chan string) {
 	reader := bufio.NewReader(in)
 	defer wg.Done()
 
 	for {
 		line, err := reader.ReadString('\n')
 		if err == io.EOF {
-			log.Printf("%v.publish(): Stop publishing.", p)
 			return
 		} else if err != nil {
-			log.Printf("%v.publish(): %s", p, err)
-			log.Printf("%v.publish(): Stop publishing.", p)
+			logErr.Printf("[%s] %s", p.cmd.Path, err)
 			return
 		}
 
-		// Do not output passwords
-		if !strings.Contains(line, "PRIVMSG Nickserv :identify") {
-			fmt.Printf("[%s] %s", p.cmd.Path, line)
-		}
-
-		p.bot.mutex.Lock()
-		fmt.Fprint(out, line)
-		p.bot.mutex.Unlock()
-
+		out <- line
 	}
 }
 
@@ -116,8 +105,8 @@ func (bot *Bot) newPlugin(path string) *Plugin {
 	}
 
 	wg.Add(2)
-	go publish(p, p.stdout, bot.Conn)
-	go publish(p, p.stderr, os.Stderr)
+	go p.publish(p.stdout, bot.toConn)
+	go p.publish(p.stderr, bot.toStderr)
 	p.cmd = cmd
 	p.bot = bot
 	wg.Add(1)
