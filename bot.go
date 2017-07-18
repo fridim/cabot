@@ -170,7 +170,7 @@ func main() {
 
 		for {
 			line, _ := stdin.ReadString('\n')
-			fmt.Fprintf(bot.Conn, line)
+			bot.toConn <- line
 		}
 
 	}()
