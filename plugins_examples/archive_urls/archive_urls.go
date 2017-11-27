@@ -23,7 +23,6 @@ func main() {
 	    			if err != nil {
 				    fmt.Fprintln(os.Stderr, "error", err)
 	    			}
-				defer fr.Close()
 				scanner := bufio.NewScanner(fr)
   				for scanner.Scan() {
 					if strings.Contains(scanner.Text(), match) {
@@ -38,12 +37,14 @@ func main() {
 	    				if err != nil {
 					    fmt.Fprintln(os.Stderr, "error", err)
 	    				}
-					defer f.Close()
 
 	    				if _, err = f.WriteString(match + "\n"); err != nil {
 					    fmt.Fprintln(os.Stderr, "error", err)
 	    				}
+					f.Close()
 				}
+
+				fr.Close()
 			}
 		}
 	}
