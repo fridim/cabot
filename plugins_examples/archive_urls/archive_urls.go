@@ -11,11 +11,7 @@ import (
 func main() {
 
 	destFile := "./urls.txt"
-
-	blacklistMatch := [2]string{
-		"",
-		"./urls.txt",
-	}
+	blacklistFile := "./blacklist.txt"
 
 	s := bufio.NewScanner(os.Stdin) 
 	for s.Scan() {
@@ -26,20 +22,28 @@ func main() {
 			re := regexp.MustCompile("https?\\:\\/\\/[[:^space:]]*")
 			match := re.FindString(line)
 			
-			for i := 1; i < len(blacklistMatch); i++ {
-				if match == blacklistMatch[i] {
-					skip = true
+			bl, err := os.Open(blacklistFile)
+			if err != nil {
+			    fmt.Fprintln(os.Stderr, "error", err)
+			}
+			scanner := bufio.NewScanner(bl)
+			for scanner.Scan() {
+				if strings.Contains(scanner.Text(), match) {
+					skip = true;
+					break;
 				}
 			}
-			
+			bl.Close()
+
 			fr, err := os.Open(destFile)
 			if err != nil {
 			    fmt.Fprintln(os.Stderr, "error", err)
 			}
-			scanner := bufio.NewScanner(fr)
+			scanner = bufio.NewScanner(fr)
 			for scanner.Scan() {
 				if strings.Contains(scanner.Text(), match) {
-					skip = true
+					skip = true;
+					break;
 				}
 			}
 			fr.Close()
