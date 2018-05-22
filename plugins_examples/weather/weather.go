@@ -22,7 +22,7 @@ var key string
 func Scities(cities []gps) string {
 	res := []string{}
 	for _, city := range cities {
-		f, err := forecast.Get(key, city.lat, city.long, "now", forecast.CA)
+		f, err := forecast.Get(key, city.lat, city.long, "now", forecast.CA, forecast.French)
 		if err != nil {
 			log.Fatal(err)
 		}
