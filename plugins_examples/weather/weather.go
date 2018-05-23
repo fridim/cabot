@@ -53,9 +53,11 @@ func main() {
 		{"Budapest", "47.4984", "19.0405"},
 		{"Cournonsec", "43.5482", "3.7"},
 		{"Dijon", "47.3216", "5.0415"},
+		{"Hanoi", "21.0292", "105.8525"},
 		{"Marseille", "43.2962", "5.37"},
 		{"Masquière", "43.4602", "1.578"},
 		{"Montréal", "45.5088", "-73.554"},
+		{"Petrozavodsk", "61.79", "34.39"},
 	}
 
 	bio := bufio.NewReader(os.Stdin)
