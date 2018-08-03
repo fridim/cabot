@@ -30,7 +30,7 @@ while line:
         except:
             reply('Oups!')
     elif what[:4] == ':tr ':
-        m2 = re.search('^:tr (\w+\-?\w+) (\w+\-?\w+) (.+)', what)
+        m2 = re.search('^:tr ([\w-]+) ([\w-]+) (.+)', what)
         if not m2:
             line = sys.stdin.readline()
             continue
