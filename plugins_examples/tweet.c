@@ -106,7 +106,7 @@ int main() {
 
         char tweetid[128] = "";
         if ((sscanf(buf, "tweeted: %127s", tweetid) == 1)) {
-          say(channel, "tweeted: https://twitter.com/statuses/%s", tweetid);
+          say(channel, "tweeted: https://twitter.com/status/%s", tweetid);
         } else {
           say(channel, "could not parse twty output.");
         }
