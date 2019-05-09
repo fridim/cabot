@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import sys
 import re
 from googletrans import Translator
@@ -29,7 +30,7 @@ while line:
         except:
             reply('Oups!')
     elif what[:4] == ':tr ':
-        m2 = re.search('^:tr (\w+) (\w+) (.+)', what)
+        m2 = re.search('^:tr ([\w-]+) ([\w-]+) (.+)', what)
         if not m2:
             line = sys.stdin.readline()
             continue

@@ -16,6 +16,7 @@
  */
 
 #define TWTY "/home/fridim/bin/twty"
+#define URL "https://twitter.com/cabotirc/status/"
 
 void say(const char *channel, const char *fmt, ...) {
   char content[256];
@@ -106,7 +107,7 @@ int main() {
 
         char tweetid[128] = "";
         if ((sscanf(buf, "tweeted: %127s", tweetid) == 1)) {
-          say(channel, "tweeted: https://twitter.com/statuses/%s", tweetid);
+          say(channel, "tweeted: %s%s", URL, tweetid);
         } else {
           say(channel, "could not parse twty output.");
         }
