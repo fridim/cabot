@@ -55,7 +55,7 @@ func loadConf() Conf {
 	return conf
 }
 
-var r1 = regexp.MustCompile(":([^!]+)[^ ]+ PRIVMSG (#[^ ]+) ::mail ([^ ]+) (.*)")
+var r1 = regexp.MustCompile(":([^!]+)[^ ]+ PRIVMSG (#[^ ]+) ::e?mail ([^ ]+) (.*)")
 
 func parseMail(line string) (bool, string, string, string, string) {
 	match := r1.FindStringSubmatch(line)
