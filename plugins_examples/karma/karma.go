@@ -202,15 +202,11 @@ func replyKarma(line string) {
 	}
 
 	// position of text in PRIVMSG lines, line[1:] for ignoring first char usually ':'
-	index := strings.Index(line[1:], ":")
+	index := strings.Index(line, " ::karma")
 	if index == -1 {
 		return
 	}
 
-	// prevent out of slice
-	if len(line) < index+3 {
-		return
-	}
 	text := line[index+2:]
 
 	if len(text) > 6 && text[:6] == ":karma" {
