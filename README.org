@@ -94,3 +94,15 @@ You will find examples of plugin in plugins_examples/ directory. For freenode, y
 #+BEGIN_SRC
 $ ./bot -server=chat.freenode.net:6697 -ssl
 #+END_SRC
+
+* Install dependencies
+
+** Alpine
+
+#+BEGIN_SRC
+apk add git go ruby-dev perl python3 py3-pip perl-libwww
+gem install tzinfo
+gem install io-console
+gem install etc
+pip install googletrans
+#+END_SRC

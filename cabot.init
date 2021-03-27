@@ -1,0 +1,22 @@
+#!/sbin/openrc-run
+
+name=$RC_SVCNAME
+cfgfile="/etc/$RC_SVCNAME/$RC_SVCNAME.conf"
+command="/home/fridim/cabot/bot"
+command_args="-server=chat.freenode.net:6697 -ssl"
+command_user="fridim"
+pidfile="/home/fridim/cabot/$RC_SVCNAME.pid"
+#start_stop_daemon_args=""
+command_background="yes"
+output_log="/var/log/cabot/cabot.log"
+error_log="/var/log/cabot/cabot.err"
+directory="/home/fridim/cabot"
+
+depend() {
+        need net
+}
+
+start_pre() {
+        checkpath --directory --owner $command_user:$command_user --mode 0775 \
+                /run/$RC_SVCNAME /var/log/$RC_SVCNAME
+}
