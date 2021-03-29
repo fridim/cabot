@@ -124,6 +124,7 @@ func main() {
 	log.SetPrefix("iii ")
 	server := flag.String("server", "chat.freenode.net:6667", "IRC server address to connect to")
 	ssl := flag.Bool("ssl", false, "use SSL")
+	interactive := flag.Bool("interactive", false, "pass stdin")
 	flag.Parse()
 
 	bot := &Bot{
@@ -165,15 +166,17 @@ func main() {
 
 	// Stdin loop: allow user to chat with server directly
 	// (useful for debugging)
-	go func() {
-		stdin := bufio.NewReader(os.Stdin)
+	if *interactive {
+		go func() {
+			stdin := bufio.NewReader(os.Stdin)
 
-		for {
-			line, _ := stdin.ReadString('\n')
-			bot.toConn <- line
-		}
+			for {
+				line, _ := stdin.ReadString('\n')
+				bot.toConn <- line
+			}
 
-	}()
+		}()
+	}
 
 	// Main loop
 	for {
