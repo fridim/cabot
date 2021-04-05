@@ -19,6 +19,51 @@ type gps struct {
 
 var key string
 
+func icon(str string, moonPhase float64) string {
+	var luna string
+
+	switch {
+	case moonPhase >= 0 && moonPhase < 0.12:
+		luna = "🌑" // new moon
+	case moonPhase >= 0.12 && moonPhase < 0.25:
+		luna = "🌒" // waxing cresent
+	case moonPhase >=  0.25 && moonPhase < 0.37:
+		luna = "🌓" // first quarter
+	case moonPhase >=  0.37 && moonPhase < 0.5:
+		luna = "🌔" // waxing gibbous
+	case moonPhase >= 0.5 && moonPhase < 0.62 :
+		luna = "🌕" // full moon
+
+	case moonPhase >= 0.62 && moonPhase < 0.75 :
+		luna = "🌖" // waning gibbous
+	case moonPhase >= 0.75 && moonPhase < 0.87 :
+		luna = "🌗" // last quarter
+	case moonPhase >= 0.87 && moonPhase < 1 :
+		luna = "🌘" // warning crescent
+	}
+
+	translation := map[string]string {
+		"clear-day": "☀",
+			"clear-night": luna ,
+			"rain": "🌧",
+			"snow": "🌨",
+			"sleet": "❄💧" ,
+			"wind": "🌬",
+			"fog": "🌫",
+			"cloudy": "☁",
+			"partly-cloudy-day": "⛅",
+			"partly-cloudy-night": "☁"+luna,
+			"hail": "🌨 grêle",
+			"thunderstorm": "⛈",
+			"tornado": "🌪",
+		}
+
+	if v, ok := translation[str]; ok {
+		return v
+	}
+	return str
+}
+
 func Scities(cities []gps) string {
 	res := []string{}
 	for _, city := range cities {
@@ -26,7 +71,18 @@ func Scities(cities []gps) string {
 		if err != nil {
 			log.Fatal(err)
 		}
-		res = append(res, fmt.Sprintf("%s %s %dC (%dC) H:%d W:%dkm/h", city.name, f.Currently.Summary, Round(f.Currently.Temperature), Round(f.Currently.ApparentTemperature), Round(f.Currently.Humidity*100), Round(f.Currently.WindSpeed)))
+		res = append(
+			res,
+			fmt.Sprintf(
+				"%s %s %dC (%dC) H:%d W:%dkm/h",
+				city.name,
+				icon(f.Currently.Icon, f.Currently.MoonPhase),
+				Round(f.Currently.Temperature),
+				Round(f.Currently.ApparentTemperature),
+				Round(f.Currently.Humidity*100),
+				Round(f.Currently.WindSpeed),
+			),
+		)
 	}
 	return strings.Join(res, " | ")
 }
