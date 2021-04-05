@@ -113,6 +113,31 @@ func temp(temp int) string {
 	return fmt.Sprintf("%d", temp)
 }
 
+func wind(w int) string {
+	switch {
+	case w > 39:
+		// vent frais
+		// bold
+		return fmt.Sprintf("%c%d%c", 0x02, w, 0x0f)
+	case w > 50:
+		// Grand frais
+		// bold + underline
+		return fmt.Sprintf("%c%c%d%c", 0x1f, 0x02, w, 0x0f)
+	case w > 62:
+		// coupe de vent
+		// reverse colors
+		return fmt.Sprintf("%c%d%c", 0x16, w, 0x0f)
+	case w > 75:
+		// reverse colors + bold
+		return fmt.Sprintf("%c%c%d%c", 0x16, 0x02, w, 0x0f)
+	case w > 89:
+		// reverse colors + bold + underline
+		return fmt.Sprintf("%c%c%c%d%c", 0x16, 0x02, 0x1f, w, 0x0f)
+	}
+
+	return fmt.Sprintf("%d", w)
+}
+
 func Scities(cities []gps) string {
 	res := []string{}
 	for _, city := range cities {
@@ -123,13 +148,13 @@ func Scities(cities []gps) string {
 		res = append(
 			res,
 			fmt.Sprintf(
-				"%s %s %sC (%sC) H:%d W:%dkm/h",
+				"%s %s %sC (%sC) H:%d W:%skm/h",
 				city.name,
 				icon(f.Currently.Icon, f.Currently.MoonPhase),
 				temp(Round(f.Currently.Temperature)),
 				temp(Round(f.Currently.ApparentTemperature)),
 				Round(f.Currently.Humidity*100),
-				Round(f.Currently.WindSpeed),
+				wind(Round(f.Currently.WindSpeed)),
 			),
 		)
 	}
