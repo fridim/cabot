@@ -64,6 +64,55 @@ func icon(str string, moonPhase float64) string {
 	return str
 }
 
+func temp(temp int) string {
+	/*
+	- 00 - White.
+	- 01 - Black.
+	- 02 - Blue.
+	- 03 - Green.
+	- 04 - Red.
+	- 05 - Brown.
+	- 06 - Magenta.
+	- 07 - Orange.
+	- 08 - Yellow.
+	- 09 - Light Green.
+	- 10 - Cyan.
+	- 11 - Light Cyan.
+	- 12 - Light Blue.
+	- 13 - Pink.
+	- 14 - Grey.
+	- 15 - Light Grey.
+	- 99 - Default Foreground/Background - Not universally supported.
+	*/
+        switch {
+        case temp < -5:
+			// bold blue
+			return fmt.Sprintf(
+				"%c%c02%d%c", 0x02, 0x03, temp, 0x0f,
+			)
+        case temp >= -5 && temp <= 5:
+			// cyan
+			return fmt.Sprintf(
+				"%c10%d%c", 0x03, temp, 0x0f,
+			)
+        case temp > 5 && temp < 30:
+			// normal
+			return fmt.Sprintf("%d", temp)
+        case temp >= 30 && temp < 35:
+			// orange
+			return fmt.Sprintf(
+				"%c07%d%c", 0x03, temp, 0x0f,
+			)
+        case temp > 35:
+			// bold red
+			return fmt.Sprintf(
+				"%c%c04%d%c", 0x02, 0x03, temp, 0x0f,
+			)
+		}
+
+	return fmt.Sprintf("%d", temp)
+}
+
 func Scities(cities []gps) string {
 	res := []string{}
 	for _, city := range cities {
@@ -74,11 +123,11 @@ func Scities(cities []gps) string {
 		res = append(
 			res,
 			fmt.Sprintf(
-				"%s %s %dC (%dC) H:%d W:%dkm/h",
+				"%s %s %sC (%sC) H:%d W:%dkm/h",
 				city.name,
 				icon(f.Currently.Icon, f.Currently.MoonPhase),
-				Round(f.Currently.Temperature),
-				Round(f.Currently.ApparentTemperature),
+				temp(Round(f.Currently.Temperature)),
+				temp(Round(f.Currently.ApparentTemperature)),
 				Round(f.Currently.Humidity*100),
 				Round(f.Currently.WindSpeed),
 			),
