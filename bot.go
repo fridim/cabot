@@ -103,7 +103,7 @@ func (bot *Bot) consume() {
 		select {
 		case line := <-bot.toConn:
 			bot.mutex.Lock()
-			fmt.Fprint(bot.Conn, line)
+			fmt.Fprint(bot.Conn, strings.Trim(line, "\r\n") + "\r\n")
 
 			// Do not output passwords
 			if !strings.Contains(line, "PRIVMSG Nickserv :identify") {
