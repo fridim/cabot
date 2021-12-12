@@ -122,7 +122,7 @@ func main() {
 	logOut = log.New(os.Stdout, "--> ", log.LstdFlags)
 	logIn = log.New(os.Stdout, "<-- ", log.LstdFlags)
 	log.SetPrefix("iii ")
-	server := flag.String("server", "chat.freenode.net:6667", "IRC server address to connect to")
+	server := flag.String("server", "irc.libera.chat:6667", "IRC server address to connect to")
 	ssl := flag.Bool("ssl", false, "use SSL")
 	interactive := flag.Bool("interactive", false, "pass stdin")
 	flag.Parse()
