@@ -23,6 +23,17 @@ while
   end
 end
 
+def wait_for(regex, max=20)
+  count = 0
+  STDIN.each_line do |l|
+    count = count + 1
+    return false if count >= max
+
+    if l =~ regex
+      return true
+    end
+  end
+end
 # Adapt to your needs. This will work on freenode.
 STDIN.each_line do |l|
   if l =~ /^:[^ ]+ NOTICE \* :\*\*\* (Found|Couldn't look up) your hostname/
@@ -31,27 +42,22 @@ STDIN.each_line do |l|
       puts "USER #{name} 0 * :#{name}"
       puts "NICK #{nick}"
       puts "CAP REQ :sasl"
+      wait_for(/^:[^ ]+ CAP #{nick} ACK :sasl/) or break
+      puts "AUTHENTICATE PLAIN"
+      wait_for(/^AUTHENTICATE \+/) or break
+      sasl_password_lines.each do |pl|
+        puts "AUTHENTICATE #{pl}"
+      end
+
+      wait_for(/^:[^ ]+ 903 #{nick} :SASL authentication successful/) or break
+      puts "CAP END"
+
+      # Join channels
+      channels.each { |c| puts "JOIN #{c}" }
     else
       puts "USER #{name} 0 * :#{name}"
       puts "NICK #{nick}"
+      channels.each { |c| puts "JOIN #{c}" }
     end
-  end
-
-  if l =~ /^:[^ ]+ CAP #{nick} ACK :sasl/
-    # use SASL
-    if File.exists? 'password'
-      puts "AUTHENTICATE PLAIN"
-    end
-  end
-
-  if l =~ /^AUTHENTICATE *\+/
-    sasl_password_lines.each do |pl|
-      puts "AUTHENTICATE #{pl}"
-    end
-  end
-
-  if l =~ /^:[^ ]+ 903 #{nick} :SASL authentication successful/
-    puts "CAP END"
-    channels.each { |c| puts "JOIN #{c}" }
   end
 end
