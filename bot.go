@@ -180,6 +180,12 @@ func main() {
 
 	// Main loop
 	for {
+		if bot.Reader == nil {
+			// Probably reconnecting
+			time.Sleep(2 * time.Second)
+			continue
+		}
+
 		line, err := bot.Reader.ReadString('\n')
 		if err != nil {
 			bot.reconnect()
