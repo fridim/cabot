@@ -100,7 +100,6 @@ func main() {
 
 	go func() {
 		for {
-			channels = loadConf()
 			for channel, _ := range channels {
 				for feed, _ := range channels[channel] {
 					err, r := get_update(channels[channel][feed])
