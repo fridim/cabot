@@ -1,0 +1,19 @@
+[Unit]
+Description=Cabot IRC bot
+After=network-online.target
+Documentation=https://github.com/fridim/cabot
+
+[Service]
+#Environment=threads=12
+
+User=cabot
+Group=cabot
+Type=simple
+ExecStart=/home/cabot/cabot/cabot_linux_arm64 -server=irc.libera.chat:6697 -ssl
+WorkingDirectory=/home/cabot/cabot
+Restart=on-failure
+StartLimitBurst=3
+StartLimitInterval=60s
+
+[Install]
+WantedBy=multi-user.target
