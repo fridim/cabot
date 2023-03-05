@@ -5,6 +5,7 @@ import (
 	"fmt"
 	forecast "github.com/mlbright/darksky/v2"
 	"io/ioutil"
+	"github.com/fridim/cabot/pkg/irc"
 	"log"
 	"os"
 	"regexp"
@@ -199,7 +200,7 @@ func main() {
 		} else {
 			par := r.FindStringSubmatch(line)
 			if par != nil {
-				fmt.Printf("PRIVMSG %s :%s\n", par[1], Scities(cities))
+				irc.Privmsg(par[1], Scities(cities))
 			}
 		}
 	}

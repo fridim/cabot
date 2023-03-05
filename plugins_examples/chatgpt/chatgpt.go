@@ -1,15 +1,15 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"github.com/eidolon/wordwrap"
+	"github.com/fridim/cabot/pkg/irc"
 	gogpt "github.com/sashabaranov/go-gpt3"
 	"os"
 	"regexp"
-	"bufio"
 	"strings"
-	"github.com/eidolon/wordwrap"
-	"time"
 )
 
 var r1 = regexp.MustCompile(":([^!]+)![^ ]+ PRIVMSG (#[^ ]+) :(.*)")
@@ -31,9 +31,9 @@ func parsePrompt(line string) (gogpt.ChatCompletionMessage, string, bool) {
 		prompt = m2[1]
 
 		return gogpt.ChatCompletionMessage{
-			Role: "user",
-			Content: fmt.Sprintf("C'est %s qui parle. %s", nick, prompt),
-		},
+				Role:    "user",
+				Content: fmt.Sprintf("C'est %s qui parle. %s", nick, prompt),
+			},
 			channel,
 			true
 	}
@@ -44,7 +44,7 @@ func parsePrompt(line string) (gogpt.ChatCompletionMessage, string, bool) {
 var messages = make(map[string][]gogpt.ChatCompletionMessage)
 var messagesInit = []gogpt.ChatCompletionMessage{
 	{
-		Role: "system",
+		Role:    "system",
 		Content: "Tu réponds toujours sous la forme d'une réponse très courte, moins de 80 caractères. Prends le temps de développer point par point ton raisonnement, mais n'inclus dans ta réponse que la conclusion.",
 	},
 }
@@ -84,12 +84,12 @@ func main() {
 
 				// Call the GPT-3 API
 				req := gogpt.ChatCompletionRequest{
-					Model:     gogpt.GPT3Dot5Turbo,
-					MaxTokens: 200,
-					Temperature: 0.8,
-					PresencePenalty: 0.8,
+					Model:            gogpt.GPT3Dot5Turbo,
+					MaxTokens:        200,
+					Temperature:      0.8,
+					PresencePenalty:  0.8,
 					FrequencyPenalty: 0.8,
-					Messages: append(messagesInit, messages[channel]...),
+					Messages:         append(messagesInit, messages[channel]...),
 				}
 				resp, err := c.CreateChatCompletion(ctx, req)
 				if err != nil {
@@ -100,14 +100,7 @@ func main() {
 				if len(resp.Choices) > 0 {
 					for _, c := range resp.Choices {
 						messages[channel] = append(messages[channel], c.Message)
-						mess := wrapper(c.Message.Content)
-						for _, line := range strings.Split(mess, "\n") {
-							fmt.Printf(
-								"PRIVMSG %s :%s\n",
-								channel,
-								line)
-							time.Sleep(1 * time.Second)
-						}
+						irc.Privmsg(channel, c.Message.Content)
 					}
 				}
 			}
