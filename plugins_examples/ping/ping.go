@@ -20,7 +20,7 @@ func main() {
 	ping := time.Now()
 	go func() {
 		for {
-			if time.Since(ping) > 255*time.Second {
+			if time.Since(ping) > 355*time.Second {
 				fmt.Fprintf(os.Stderr, "ping not received from server for 255 sec, SIGUSR1 sent to %d\n", parentpid.Pid)
 				parentpid.Signal(syscall.SIGUSR1)
 				ping = time.Now()
