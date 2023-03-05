@@ -8,10 +8,13 @@ import (
 	"regexp"
 	"bufio"
 	"strings"
+	"github.com/eidolon/wordwrap"
+	"time"
 )
 
 var r1 = regexp.MustCompile(":([^!]+)![^ ]+ PRIVMSG (#[^ ]+) :(.*)")
-var r2 = regexp.MustCompile("^cabot[,:]? (.*)")
+var r2 = regexp.MustCompile("^[cC]abot[,:]? (.*)")
+var wrapper = wordwrap.Wrapper(400, false)
 
 func parsePrompt(line string) (gogpt.ChatCompletionMessage, string, bool) {
 	m := r1.FindStringSubmatch(line)
@@ -49,13 +52,17 @@ var messagesInit = []gogpt.ChatCompletionMessage{
 var maxMessages = 15
 
 func main() {
-	tokenBytes, err := os.ReadFile("openapi_token.txt")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error reading token.txt: %v", err)
-		os.Exit(1)
+	token := os.Getenv("OPENAI_TOKEN")
+	if token == "" {
+		tokenBytes, err := os.ReadFile("openapi_token.txt")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error reading token.txt: %v", err)
+			os.Exit(1)
+		}
+
+		token = strings.Trim(string(tokenBytes), " \t\r\n")
 	}
 
-	token := strings.Trim(string(tokenBytes), " \t\r\n")
 	c := gogpt.NewClient(token)
 	bio := bufio.NewReader(os.Stdin)
 	ctx := context.Background()
@@ -64,6 +71,8 @@ func main() {
 		line, err := bio.ReadString('\n')
 		if err == nil {
 			if message, channel, ok := parsePrompt(line); ok {
+				// TODO: ensure channel is autorized
+
 				if _, ok := messages[channel]; !ok {
 					messages[channel] = make([]gogpt.ChatCompletionMessage, 0)
 				}
@@ -76,7 +85,7 @@ func main() {
 				// Call the GPT-3 API
 				req := gogpt.ChatCompletionRequest{
 					Model:     gogpt.GPT3Dot5Turbo,
-					MaxTokens: 100,
+					MaxTokens: 200,
 					Temperature: 0.8,
 					PresencePenalty: 0.8,
 					FrequencyPenalty: 0.8,
@@ -91,10 +100,14 @@ func main() {
 				if len(resp.Choices) > 0 {
 					for _, c := range resp.Choices {
 						messages[channel] = append(messages[channel], c.Message)
-						fmt.Printf(
-							"PRIVMSG %s :%s\n",
-							channel,
-							c.Message.Content)
+						mess := wrapper(c.Message.Content)
+						for _, line := range strings.Split(mess, "\n") {
+							fmt.Printf(
+								"PRIVMSG %s :%s\n",
+								channel,
+								line)
+							time.Sleep(1 * time.Second)
+						}
 					}
 				}
 			}
