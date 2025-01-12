@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/eidolon/wordwrap"
 	"github.com/fridim/cabot/pkg/irc"
-	gogpt "github.com/sashabaranov/go-gpt3"
+	gogpt "github.com/sashabaranov/go-openai"
 	"os"
 	"regexp"
 	"strings"
@@ -54,13 +54,33 @@ var maxMessages = 15
 func main() {
 	token := os.Getenv("OPENAI_TOKEN")
 	if token == "" {
-		tokenBytes, err := os.ReadFile("openapi_token.txt")
+		tokenBytes, err := os.ReadFile("openai_token.txt")
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "error reading token.txt: %v", err)
 			os.Exit(1)
 		}
 
 		token = strings.Trim(string(tokenBytes), " \t\r\n")
+	}
+
+	// Detect if prompt is available locally, if then load it as the context
+
+	// Check if file openai_context.txt exists
+	if _, err := os.Stat("openai_context.txt"); err == nil {
+		// Load the file
+		contextBytes, err := os.ReadFile("openai_context.txt")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error reading openai_context.txt: %v", err)
+			os.Exit(1)
+		}
+
+		context := strings.Trim(string(contextBytes), " \t\r\n")
+
+		// Add the context to the messagesInit
+		messagesInit = append(messagesInit, gogpt.ChatCompletionMessage{
+			Role:    "system",
+			Content: context,
+		})
 	}
 
 	c := gogpt.NewClient(token)
@@ -84,7 +104,7 @@ func main() {
 
 				// Call the GPT-3 API
 				req := gogpt.ChatCompletionRequest{
-					Model:            gogpt.GPT3Dot5Turbo,
+					Model:            gogpt.O1Mini,
 					MaxTokens:        200,
 					Temperature:      0.8,
 					PresencePenalty:  0.8,
@@ -93,7 +113,7 @@ func main() {
 				}
 				resp, err := c.CreateChatCompletion(ctx, req)
 				if err != nil {
-					fmt.Fprintf(os.Stderr, "error calling GPT-3 API: %v", err)
+					fmt.Fprintf(os.Stderr, "error calling GPT API: %v", err)
 					continue
 				}
 
