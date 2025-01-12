@@ -63,26 +63,6 @@ func main() {
 		token = strings.Trim(string(tokenBytes), " \t\r\n")
 	}
 
-	// Detect if prompt is available locally, if then load it as the context
-
-	// Check if file openai_context.txt exists
-	if _, err := os.Stat("openai_context.txt"); err == nil {
-		// Load the file
-		contextBytes, err := os.ReadFile("openai_context.txt")
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "error reading openai_context.txt: %v", err)
-			os.Exit(1)
-		}
-
-		context := strings.Trim(string(contextBytes), " \t\r\n")
-
-		// Add the context to the messagesInit
-		messagesInit = append(messagesInit, gogpt.ChatCompletionMessage{
-			Role:    "system",
-			Content: context,
-		})
-	}
-
 	c := gogpt.NewClient(token)
 	bio := bufio.NewReader(os.Stdin)
 	ctx := context.Background()
@@ -101,15 +81,35 @@ func main() {
 				if len(messages[channel]) > maxMessages {
 					messages[channel] = messages[channel][1:]
 				}
+				// Detect if prompt is available locally, if then load it as the context
+				// Check if file openai_context.txt exists
+				var customSystem []gogpt.ChatCompletionMessage
+				if _, err := os.Stat("openai_context.txt"); err == nil {
+					// Load the file
+					contextBytes, err := os.ReadFile("openai_context.txt")
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "error reading openai_context.txt: %v", err)
+						os.Exit(1)
+					}
+
+					context := strings.Trim(string(contextBytes), " \t\r\n")
+
+					// Add the context to the messagesInit
+					customSystem = []gogpt.ChatCompletionMessage{
+						gogpt.ChatCompletionMessage{
+							Role:    "system",
+							Content: context,
+						},
+					}
+				}
 
 				// Call the GPT-3 API
 				req := gogpt.ChatCompletionRequest{
-					Model:            gogpt.O1Mini,
-					MaxTokens:        200,
+					Model:            gogpt.GPT4o,
 					Temperature:      0.8,
 					PresencePenalty:  0.8,
 					FrequencyPenalty: 0.8,
-					Messages:         append(messagesInit, messages[channel]...),
+					Messages:         append(append(messagesInit, customSystem...), messages[channel]...),
 				}
 				resp, err := c.CreateChatCompletion(ctx, req)
 				if err != nil {
