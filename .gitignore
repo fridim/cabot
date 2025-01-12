@@ -22,3 +22,4 @@ _testmain.go
 *.exe
 *.test
 *.prof
+owm_api.txt
